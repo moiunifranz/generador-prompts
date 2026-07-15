@@ -88,7 +88,7 @@
                             <i class="fa-solid fa-shield-halved animate-pulse"></i> Safe & Clean Google Flow Optimization
                         </span>
                         <h1 class="text-3xl md:text-4xl font-extrabold text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                            <span>🎯 Hyper-Real Corporate Prompt Engine <span class="text-sm font-mono font-semibold align-middle bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg">v2.0.9</span></span>
+                            <span>🎯 Hyper-Real Corporate Prompt Engine <span class="text-sm font-mono font-semibold align-middle bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg">v2.0.10</span></span>
                         </h1>
                         <p class="text-slate-500 dark:text-slate-400 mt-2 max-w-3xl text-sm md:text-base">
                             Generador optimizado para Google Flow con ergonomía física real e interacciones colaborativas grupales realistas basadas en la profesión seleccionada.
@@ -203,7 +203,7 @@
             administracion: {
                 nombre: "Administración de Empresas",
                 cargo: "operations manager",
-                entorno: "a highly-organized, bright corporate office boardroom with glass partitions, visible goal tracking structures, and organized organizational binders",
+                entorno: "corporate office boardroom with glass partitions, visible goal tracking structures, and organized organizational binders",
                 actions: [
                     "reviewing a business report",
                     "analyzing KPI dashboards",
@@ -220,7 +220,7 @@
             ingenieria_comercial: {
                 nombre: "Ingeniería Comercial",
                 cargo: "commercial development strategist",
-                entorno: "a luminous corporate environment with digital sales dashboards, market expansion map projections, and premium modern desk arrangements",
+                entorno: "corporate environment with digital sales dashboards, market expansion map projections, and premium modern desk arrangements",
                 actions: [
                     "analyzing market expansion data",
                     "planning business strategies",
@@ -237,7 +237,7 @@
             marketing: {
                 nombre: "Publicidad y Marketing",
                 cargo: "creative brand strategist",
-                entorno: "a vibrant, contemporary creative agency workspace featuring dynamic visual moodboards, brand identity displays, and digital design templates",
+                entorno: "vibrant, contemporary creative agency workspace featuring dynamic visual moodboards, brand identity displays, and digital design templates",
                 actions: [
                     "developing a campaign concept",
                     "reviewing campaign analytics",
@@ -253,7 +253,7 @@
             derecho: {
                 nombre: "Derecho (Legal)",
                 cargo: "legal counsel advisor",
-                entorno: "an elegant, solemn law firm office featuring classic rich mahogany bookshelves filled with heavy leather-bound legal archives",
+                entorno: "law firm office featuring classic rich mahogany bookshelves filled with heavy leather-bound legal archives",
                 actions: [
                     "reviewing a legal contract",
                     "analyzing case files",
@@ -270,7 +270,7 @@
             contaduria: {
                 nombre: "Contaduría Pública (CPA)",
                 cargo: "certified public finance auditor",
-                entorno: "a clean, highly organized accounting office with professional financial ledgers, tax compliance charts, and organized analytical documents",
+                entorno: "clean, highly organized accounting office with professional financial ledgers, tax compliance charts, and organized analytical documents",
                 actions: [
                     "reviewing financial statements",
                     "preparing a balance sheet",
@@ -288,7 +288,7 @@
             psicologia: {
                 nombre: "Psicología",
                 cargo: "consulting corporate psychologist",
-                entorno: "a warm, peaceful consultation office featuring soft accent lighting, approachable design accents, and neutral-toned comfortable seating",
+                entorno: "warm, peaceful consultation office featuring soft accent lighting, approachable design accents, and neutral-toned comfortable seating",
                 actions: [
                     "analyzing evaluation forms",
                     "writing clinical notes",
@@ -316,6 +316,16 @@
                 "Clase Online",
                 "Notas de Estudio"
             ]
+        };
+
+        const locationMap = {
+            "office_modern": "luminous modern corporate office with glass partitions and floor-to-ceiling windows",
+            "boardroom_minimal": "minimalist corporate boardroom with sleek glass walls and large windows",
+            "library_small": "quiet, sophisticated study area with tall wooden bookshelves, heavy study tables, and reference archives",
+            "home_office": "cozy, naturally-lit home office workspace with ambient houseplants and comfortable residential decor",
+            "coworking_space": "vibrant, contemporary creative coworking studio with modern colorful accents and flexible workstations",
+            "loft_industrial": "spacious industrial-style loft office with high ceilings, exposed brick walls, and concrete floors",
+            "university_classroom": "clean professional university classroom, academic seminar room, or training workshop environment"
         };
 
         // Objetos para trabajo en equipo controlados por profesión
@@ -379,7 +389,7 @@
             colombiano: { nombre: "Colombia", context: "based in Colombia" }
         };
 
-        // Paleta extendida de 21 colores profesionales de prendas
+        // Paleta de 21 colores profesionales de prendas
         const professionalClothingColors = [
             { display: "Blanco ejecutivo", val: "white" },
             { display: "Azul marino", val: "navy blue" },
@@ -446,7 +456,6 @@
         // Estado único de la aplicación
         let currentConfig = {};
         let promptIsGenerated = false;
-
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -523,6 +532,7 @@
             const initialAge = '36-45';
             const initialLayout = 'left';
             const initialDaytime = 'morning';
+            const initialLocation = 'office_modern';
             const initialDevice = 'laptop';
             const initialProfession = 'administracion';
             const initialNacionalidad = 'boliviano';
@@ -539,6 +549,7 @@
                 genero: initialGender,
                 edad: initialAge,
                 daytime: initialDaytime,
+                location: initialLocation,
                 dispositivo: initialDevice,
                 accionDispositivo: initialAccion,
                 profesion: initialProfession,
@@ -551,7 +562,7 @@
                 sceneAccessory: "none",
                 groupPeopleCount: 3,
                 
-                // Nuevos controles de validación y renderizado
+                // Controles de validación y renderizado
                 textMode: "safe", // safe, short_label, post_production
                 allowSecondaryDevice: "disabled", // enabled, disabled
                 complexityPreference: "low", // low, medium, high
@@ -561,8 +572,7 @@
             };
         }
 
-
-        // 1. CAPA DE VALIDACIÓN Y NORMALIZACIÓN ANTES DE CONSTRUIR EL PROMPT
+        // CAPA DE VALIDACIÓN Y NORMALIZACIÓN ANTES DE CONSTRUIR EL PROMPT
         function validateAndNormalizeSceneConfig(config) {
             let norm = { ...config };
 
@@ -592,7 +602,6 @@
             // Ajustar complejidad según preferencia
             let score = calculateComplexityScore(norm);
             if (norm.complexityPreference === "low" || (score > 12 && norm.complexityPreference === "medium")) {
-                // Simplificar automáticamente para evitar desorden visual
                 norm.allowSecondaryDevice = "disabled";
                 if (norm.textMode === "short_label") {
                     norm.textMode = "safe"; // Descenso a safe mode para reducir deformación de texto
@@ -602,7 +611,7 @@
             return norm;
         }
 
-        // 13. CÁLCULO DE COMPLEJIDAD INTERNA
+        // CÁLCULO DE COMPLEJIDAD INTERNA
         function calculateComplexityScore(config) {
             let score = 0;
             if (config.layout === "multiple") {
@@ -625,7 +634,6 @@
             }
             return "general";
         }
-
 
         function traducirAccionAlIngles(textoUsuario) {
             if (!textoUsuario) return "";
@@ -806,8 +814,7 @@
             return surfaces.slice(0, 2);
         }
 
-
-        // 7. CONTROL DEL TEXTO VISIBLE Y SUS TRES MODOS
+        // CONTROL DEL TEXTO VISIBLE Y SUS MODOS
         function buildSpanishTextInstruction(profesion, accion, selectedSurfaces, userIntent, isGroup = false) {
             const mode = currentConfig.textMode;
             if (mode === "safe") {
@@ -848,8 +855,7 @@
             return instructions.join(". ") + (instructions.length > 0 ? " All other text elements remain completely abstract and unreadable." : "");
         }
 
-
-        // 4. REGLAS FÍSICAS ESPECÍFICAS PARA CADA DISPOSITIVO Y 14. MONITOR DE ESCRITORIO REALISTA
+        // REGLAS FÍSICAS ESPECÍFICAS PARA CADA DISPOSITIVO Y MONITOR DE ESCRITORIO REALISTA
         function buildErgonomicDeskLayout(config, selectedObjects) {
             let layoutTexts = [];
             const isWriting = (config.accionDispositivo === "escribiendo" || config.escena.toLowerCase().includes("escribiendo") || config.escena.toLowerCase().includes("tomando apuntes"));
@@ -875,7 +881,7 @@
                 layoutTexts.push("Work materials are placed within easy and comfortable reach of the professional's hands.");
             }
 
-            // 6. REEMPLAZAR SIMETRÍA DECORATIVA POR ERGONOMÍA REAL Y 15. LAYOUT CENTRADO
+            // REEMPLAZAR SIMETRÍA DECORATIVA POR ERGONOMÍA REAL Y LAYOUT CENTRADO
             if (config.layout === "right") {
                 layoutTexts.push("The subject is positioned on the right third of the frame in a natural working posture. All tools and devices occupy the center and left portion of the desk within comfortable reach, aligned with the posture in an asymmetrical but ergonomically organized layout.");
             } else if (config.layout === "left") {
@@ -1020,8 +1026,7 @@
             return compositionChunk;
         }
 
-
-        // 8. NO ELIMINAR RESTRICCIONES IMPORTANTES DURANTE LA SANITIZACIÓN
+        // NO ELIMINAR RESTRICCIONES IMPORTANTES DURANTE LA SANITIZACIÓN
         function sanitizeVisibleSpanishTextPrompt(prompt) {
             if (!prompt) return "";
             let clean = prompt;
@@ -1059,7 +1064,7 @@
             return clean.trim();
         }
 
-        // 12. DETECTOR DE CONTRADICCIONES INTERNO
+        // DETECTOR DE CONTRADICCIONES INTERNO
         function detectPromptContradictions(prompt, config) {
             let cleanPrompt = prompt;
             let fixesApplied = [];
@@ -1100,7 +1105,6 @@
 
             return cleanPrompt;
         }
-
 
         function renderizarAplicacion() {
             const container = document.getElementById("main-container");
@@ -1216,7 +1220,7 @@
 
                                             <!-- Opción 4: Reunión -->
                                             <label class="relative flex flex-col items-center p-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition" id="label-layout-multiple">
-                                                <input type="radio" name="layout-activo" id="layout-multiple-input" value="multiple" class="sr- sr-only" onchange="seleccionarLayoutActivo('multiple'); ejecutarCambioFormulario();">
+                                                <input type="radio" name="layout-activo" id="layout-multiple-input" value="multiple" class="sr-only" onchange="seleccionarLayoutActivo('multiple'); ejecutarCambioFormulario();">
                                                 <div class="w-full h-14 bg-slate-100 dark:bg-slate-950 rounded-lg flex items-center p-1 mb-2 gap-1 border border-slate-200 dark:border-slate-800 overflow-hidden justify-center">
                                                     <div class="w-5 h-5 bg-indigo-50/20 border border-indigo-500/30 rounded-full flex items-center justify-center text-indigo-500 text-[8px] font-bold">👤</div>
                                                     <div class="w-6 h-6 bg-indigo-500/20 border border-indigo-500/40 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-bold">👤</div>
@@ -1229,7 +1233,7 @@
                                     </div>
 
                                     <!-- Selector visible en modo grupal (Cantidad de Personas) -->
-                                    <div id="group-people-box" class="hidden col-span-1 md:col-span-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-xl">
+                                    <div id="group-people-box" class="hidden col-span-1 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-xl">
                                         <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1">Cantidad de Personas</label>
                                         <select id="group-people-count" onchange="ejecutarCambioFormulario()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200 cursor-pointer">
                                             <option value="3" selected>3 personas</option>
@@ -1239,8 +1243,10 @@
                                         <span class="block text-[10px] text-slate-500 dark:text-slate-400 mt-1">Selecciona entre 3 y 5 personas para escenas colaborativas.</span>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3" id="filtros-individuales-box">
-                                        <div>
+                                    <!-- Selectores principales (Dinámicos y persistentes tanto en individual como en grupal) -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="filtros-individuales-box">
+                                        <!-- Envoltura de género, se ocultará sutilmente en modo grupal -->
+                                        <div id="gender-wrapper-activo">
                                             <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Identidad de Género</label>
                                             <select id="gender-activo" onchange="toggleGenderTraitsActivo()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200">
                                                 <option value="woman">Mujer (Woman)</option>
@@ -1266,6 +1272,18 @@
                                             </select>
                                         </div>
                                         <div>
+                                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Entorno de Ubicación</label>
+                                            <select id="location-activo" onchange="ejecutarCambioFormulario()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200">
+                                                <option value="office_modern" selected>Oficina Moderna</option>
+                                                <option value="boardroom_minimal">Sala de Juntas Minimalista</option>
+                                                <option value="library_small">Biblioteca Pequeña / Estudio</option>
+                                                <option value="home_office">Casa (Home Office Acogedor)</option>
+                                                <option value="coworking_space">Coworking Creativo</option>
+                                                <option value="loft_industrial">Loft Industrial Amplio</option>
+                                                <option value="university_classroom">Aula / Seminario Profesional</option>
+                                            </select>
+                                        </div>
+                                        <div>
                                             <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Dispositivo Utilizado</label>
                                             <select id="dispositivo-activo" onchange="ejecutarCambioFormulario()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200">
                                                 <option value="laptop">Laptop (Portátil)</option>
@@ -1275,7 +1293,8 @@
                                                 <option value="none">Sin dispositivo</option>
                                             </select>
                                         </div>
-                                        <div>
+                                        <!-- Envoltura de estado/interacción, se ocultará sutilmente en modo grupal -->
+                                        <div id="accion-wrapper-activa">
                                             <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Interacción / Estado</label>
                                             <select id="accion-activa" onchange="ejecutarCambioFormulario()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200">
                                                 <option value="escribiendo">Escribiendo (Writing)</option>
@@ -1357,8 +1376,8 @@
                             </div>
                         </div>
 
-                        <!-- Columna de Previsualización Única (Fijada Abajo) -->
-                        <div class="w-full flex flex-col justify-start border-t border-slate-100 dark:border-slate-800 pt-6">
+                        <!-- Columna de Previsualización Única (Oculta por defecto, revelada en Generación de Imagen HD) -->
+                        <div id="preview-section-wrapper" class="w-full flex flex-col justify-start border-t border-slate-100 dark:border-slate-800 pt-6 hidden">
                             <div class="pb-3 mb-3 flex justify-between items-center">
                                 <span class="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                                     <i class="fa-solid fa-eye"></i> Previsualización (16:9)
@@ -1490,12 +1509,6 @@
             guardarSeccionActual();
         }
 
-        function toggleGenderTraitsActivo() {
-            const gender = document.getElementById("gender-activo").value;
-            sincronizarSelectoresGenero(gender, "", "", "", "");
-            ejecutarCambioFormulario();
-        }
-
         function seleccionarLayoutActivo(valor) {
             const options = ['left', 'right', 'center', 'multiple'];
             options.forEach(opt => {
@@ -1516,17 +1529,20 @@
                 activeLabel.classList.add('border-indigo-600', 'bg-indigo-50/20', 'dark:bg-indigo-950/20', 'dark:border-indigo-500');
             }
 
-            // Ocultar o mostrar selectores dependientes del modo grupal o individual
-            const filterBox = document.getElementById("filtros-individuales-box");
+            // Ocultar o mostrar selectores dependientes del modo grupal o individual de forma controlada
+            const genderWrapper = document.getElementById("gender-wrapper-activo");
+            const actionWrapper = document.getElementById("accion-wrapper-activa");
             const faccionesBox = document.getElementById("facciones-estilo-box");
             const groupPeopleBox = document.getElementById("group-people-box");
             
             if (valor === "multiple") {
-                if (filterBox) filterBox.classList.add("hidden");
+                if (genderWrapper) genderWrapper.classList.add("hidden");
+                if (actionWrapper) actionWrapper.classList.add("hidden");
                 if (faccionesBox) faccionesBox.classList.add("hidden");
                 if (groupPeopleBox) groupPeopleBox.classList.remove("hidden");
             } else {
-                if (filterBox) filterBox.classList.remove("hidden");
+                if (genderWrapper) genderWrapper.classList.remove("hidden");
+                if (actionWrapper) actionWrapper.classList.remove("hidden");
                 if (faccionesBox) faccionesBox.classList.remove("hidden");
                 if (groupPeopleBox) groupPeopleBox.classList.add("hidden");
             }
@@ -1538,21 +1554,21 @@
             return "fa-user-tie text-indigo-400";
         }
 
-
         function guardarSeccionActual() {
-            currentConfig.escena = document.getElementById("context-activo").value;
-            currentConfig.genero = document.getElementById("gender-activo").value;
-            currentConfig.edad = document.getElementById("age-activo").value;
-            currentConfig.daytime = document.getElementById("daytime-activo").value;
-            currentConfig.dispositivo = document.getElementById("dispositivo-activo").value;
-            currentConfig.accionDispositivo = document.getElementById("accion-activa").value;
-            currentConfig.profesion = document.getElementById("profesion-activa").value;
-            currentConfig.nacionalidad = document.getElementById("nacionalidad-activa").value;
+            if (document.getElementById("context-activo")) currentConfig.escena = document.getElementById("context-activo").value;
+            if (document.getElementById("gender-activo")) currentConfig.genero = document.getElementById("gender-activo").value;
+            if (document.getElementById("age-activo")) currentConfig.edad = document.getElementById("age-activo").value;
+            if (document.getElementById("daytime-activo")) currentConfig.daytime = document.getElementById("daytime-activo").value;
+            if (document.getElementById("location-activo")) currentConfig.location = document.getElementById("location-activo").value;
+            if (document.getElementById("dispositivo-activo")) currentConfig.dispositivo = document.getElementById("dispositivo-activo").value;
+            if (document.getElementById("accion-activa")) currentConfig.accionDispositivo = document.getElementById("accion-activa").value;
+            if (document.getElementById("profesion-activa")) currentConfig.profesion = document.getElementById("profesion-activa").value;
+            if (document.getElementById("nacionalidad-activa")) currentConfig.nacionalidad = document.getElementById("nacionalidad-activa").value;
             
             // Renderer parameters
-            currentConfig.textMode = document.getElementById("renderer-text-mode").value;
-            currentConfig.allowSecondaryDevice = document.getElementById("renderer-secondary-device").value;
-            currentConfig.complexityPreference = document.getElementById("renderer-complexity").value;
+            if (document.getElementById("renderer-text-mode")) currentConfig.textMode = document.getElementById("renderer-text-mode").value;
+            if (document.getElementById("renderer-secondary-device")) currentConfig.allowSecondaryDevice = document.getElementById("renderer-secondary-device").value;
+            if (document.getElementById("renderer-complexity")) currentConfig.complexityPreference = document.getElementById("renderer-complexity").value;
 
             if (document.getElementById("hair-activo")) currentConfig.hair = document.getElementById("hair-activo").value;
             if (document.getElementById("facial-activo")) currentConfig.facial = document.getElementById("facial-activo").value;
@@ -1583,6 +1599,7 @@
             document.getElementById("gender-activo").value = currentConfig.genero;
             document.getElementById("age-activo").value = currentConfig.edad;
             document.getElementById("daytime-activo").value = currentConfig.daytime;
+            document.getElementById("location-activo").value = currentConfig.location || "office_modern";
             document.getElementById("dispositivo-activo").value = currentConfig.dispositivo || "laptop";
             document.getElementById("accion-activa").value = currentConfig.accionDispositivo || "none";
             document.getElementById("profesion-activa").value = currentConfig.profesion || "administracion";
@@ -1758,12 +1775,21 @@
             }
         }
 
-
-        // 9. CREAR PLANTILLAS ESTRUCTURADAS (De la Letra A a la L)
+        // CREAR PLANTILLAS ESTRUCTURADAS (De la Letra A a la L)
         function generarPromptGoogleFlowCoherente(config) {
             const matrix = compatibilityMatrix[config.profesion] || compatibilityMatrix.administracion;
             const userIntent = detectarIntencionUsuario(config.escena);
             const isGroup = config.layout === "multiple";
+
+            // Normalización de edad y entorno basada en los selectores dinámicos
+            const ageMap = {
+                "25-35": "young adult",
+                "36-45": "mid-career",
+                "46-56": "experienced",
+                "57+": "senior"
+            };
+            const ageGroupWord = ageMap[config.edad] || "mid-career";
+            const selectedLocation = locationMap[config.location] || locationMap.office_modern;
 
             if (isGroup) {
                 // MODO COLABORATIVO GRUPAL (Entre 3 y 5 personas) con topología estricta
@@ -1781,16 +1807,26 @@
                 const nacObj = nacionalidadesReferencia[config.nacionalidad] || { nombre: "Bolivia", context: "based in Bolivia" };
                 const locationContext = nacObj.context;
 
+                // Lógica de Iluminación Grupal dinámica
+                let groupLighting = "Bright crisp midday business daylight, clean office shadows";
+                if (config.daytime === "morning") {
+                    groupLighting = "Warm glowing golden-hour morning sunlight casting long clean soft office shadows through glass windows";
+                } else if (config.daytime === "afternoon") {
+                    groupLighting = "Bright crisp midday business daylight, neutral direct office illumination, clean professional tones";
+                } else if (config.daytime === "night") {
+                    groupLighting = "Dramatic evening office lighting with soft ambient glass reflections and subtle city lights visible in the distant background";
+                }
+
                 // Bloques Estructurados A-L
                 const blockA = "Photorealistic corporate editorial photograph, 16:9 horizontal format.";
-                const blockB = `A small team of ${numberToWords(count)} Latin American professionals ${locationContext} is ${topology}.`;
+                const blockB = `A small team of ${numberToWords(count)} ${ageGroupWord} Latin American professionals ${locationContext} is ${topology}.`;
                 const blockC = `They are actively engaged in the process of ${groupAction}.`;
                 const blockD = "The main collaborative interface is a shared laptop placed in the workspace center.";
                 const blockE = `${roles}`;
                 const blockF = `${ergonomics} The laptop screen is angled inward facing the team, consistent with a real meeting posture, consistent with natural use rather than visual display.`;
                 const blockG = `The shared workspace is minimal and clean, containing only the required tools: ${objects.join(", ")}.`;
-                const blockH = `The background is a softly blurred office environment matching ${matrix.entorno}, clean, quiet and organized.`;
-                const blockI = "Bright natural office daylight, clean composition, photographed with a high-performance 35mm lens, f/2.8, soft cinematic depth of field, sharp details.";
+                const blockH = `The background is a softly blurred ${selectedLocation} matching the neat, organized character of ${matrix.entorno}, clean, quiet and focused.`;
+                const blockI = `${groupLighting}, clean composition, photographed with a high-performance 35mm lens, f/2.8, soft cinematic depth of field, sharp details.`;
                 const blockJ = `${spanishTextInstructions}`;
                 const blockK = "Prioritize clear role distribution and shared-task coherence. Each participant must have one understandable role. Shared devices must face the active participants, never the camera. Avoid duplicated gestures, duplicated tools and participants performing the same action mechanically.";
                 const blockL = "Keep the group composition spatially coherent and professionally grounded. The shared laptop must be oriented inward toward the team, not toward the camera. Avoid floating object placement, front-facing display screens, too many scattered papers, duplicate devices, cluttered desks, everyone reaching toward the same object, distorted hands and unrealistic group posture.";
@@ -1880,7 +1916,8 @@
                     lightingText = "Dramatic evening office lighting with soft ambient glass reflections and subtle city lights visible in the distant background";
                 }
 
-                const entornoProfesional = matrix.entorno;
+                // Fusión del Entorno seleccionado con el Entorno predeterminado de la Profesión
+                const entornoProfesional = `${selectedLocation} matching the professional character of ${matrix.entorno}`;
 
                 let stylingTraits = `has ${config.hair}`;
                 if (config.genero === "man") {
@@ -1907,7 +1944,7 @@
                     accessoryDesc = `${pronoun} is wearing subtle wireless over-ear headphones.`;
                 }
 
-                // 11. RESTRICCIONES NEGATIVAS DINÁMICAS SEGÚN EL DISPOSITIVO
+                // RESTRICCIONES NEGATIVAS DINÁMICAS SEGÚN EL DISPOSITIVO
                 let customNegatives = "";
                 if (config.dispositivo === "desktop") {
                     customNegatives = "no reversed monitor, no screen facing away from the user, no disconnected keyboard, no keyboard facing a different direction, no mouse on the opposite workstation, no impossible cable connections, no duplicated monitor.";
@@ -2010,7 +2047,6 @@
             document.body.removeChild(textToCopy);
         }
 
-
         async function generarImagenConIAActivo() {
             guardarSeccionActual();
             
@@ -2018,6 +2054,12 @@
             if (!promptText || !promptIsGenerated) {
                 promptText = construirPromptEspecificoActivo();
                 promptIsGenerated = true;
+            }
+
+            // REVELAR DINÁMICAMENTE LA PREVISUALIZACIÓN AL APRETAR EL BOTÓN GENERAR
+            const previewWrapper = document.getElementById("preview-section-wrapper");
+            if (previewWrapper) {
+                previewWrapper.classList.remove("hidden");
             }
 
             const userApiKey = document.getElementById("global-api-key").value.trim();
@@ -2130,6 +2172,13 @@
         function restaurarVistaMockupActivo() {
             currentConfig.imagenGeneradaUrl = "";
             actualizarUIOutputs();
+            
+            // OCULTAR DINÁMICAMENTE LA PREVISUALIZACIÓN AL RESTABLECER LA MAQUETA
+            const previewWrapper = document.getElementById("preview-section-wrapper");
+            if (previewWrapper) {
+                previewWrapper.classList.add("hidden");
+            }
+            
             showToast("Maqueta estructural de previsualización restablecida.", "info");
         }
 
@@ -2140,6 +2189,13 @@
             document.getElementById("context-activo").value = "";
             promptIsGenerated = false;
             actualizarUIOutputs();
+            
+            // Ocultar previsualización al borrar configuración
+            const previewWrapper = document.getElementById("preview-section-wrapper");
+            if (previewWrapper) {
+                previewWrapper.classList.add("hidden");
+            }
+            
             showToast("Se vació la configuración e idea descriptiva.", 'info');
         }
 
@@ -2192,7 +2248,7 @@
             inicializarEstado();
             renderizarAplicacion();
             cargarSeccionActual();
-            showToast("Plataforma Google Flow Edition lista.", "info");
+            showToast("Plataforma Google Flow Edition v2.0.10 lista.", "info");
         };
     </script>
 </body>
