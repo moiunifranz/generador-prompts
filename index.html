@@ -88,7 +88,7 @@
                             <i class="fa-solid fa-shield-halved animate-pulse"></i> Safe & Clean Google Flow Optimization
                         </span>
                         <h1 class="text-3xl md:text-4xl font-extrabold text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                            <span>🎯 Hyper-Real Corporate Prompt Engine</span>
+                            <span>🎯 Hyper-Real Corporate Prompt Engine <span class="text-sm font-mono font-semibold align-middle bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg">v2.0.9</span></span>
                         </h1>
                         <p class="text-slate-500 dark:text-slate-400 mt-2 max-w-3xl text-sm md:text-base">
                             Generador optimizado para Google Flow con ergonomía física real e interacciones colaborativas grupales realistas basadas en la profesión seleccionada.
@@ -317,7 +317,6 @@
                 "Notas de Estudio"
             ]
         };
-
 
         // Objetos para trabajo en equipo controlados por profesión
         const groupSceneObjects = {
@@ -551,11 +550,72 @@
                 clothingColor: clothingColor,
                 sceneAccessory: "none",
                 groupPeopleCount: 3,
+                
+                // Nuevos controles de validación y renderizado
+                textMode: "safe", // safe, short_label, post_production
+                allowSecondaryDevice: "disabled", // enabled, disabled
+                complexityPreference: "low", // low, medium, high
+                
                 promptCalculado: "",
                 imagenGeneradaUrl: ""
             };
         }
 
+
+        // 1. CAPA DE VALIDACIÓN Y NORMALIZACIÓN ANTES DE CONSTRUIR EL PROMPT
+        function validateAndNormalizeSceneConfig(config) {
+            let norm = { ...config };
+
+            // Corregir contradicciones entre la acción y el dispositivo
+            if (norm.dispositivo === "none") {
+                if (norm.accionDispositivo === "escribiendo" && !norm.escena.includes("notebook")) {
+                    norm.escena = "writing in a physical notebook with a classic pen";
+                } else if (norm.accionDispositivo === "leyendo" && !norm.escena.includes("document")) {
+                    norm.escena = "reviewing paper documents on the desk";
+                }
+            }
+
+            // Asegurar que si la acción es escribir o leer, el estado de dispositivo sea lógico
+            if (norm.accionDispositivo === "escribiendo" && norm.dispositivo === "smartphone") {
+                norm.dispositivo = "laptop"; // La escritura intensiva requiere una laptop o libreta, no smartphone
+            }
+
+            // Normalización de intenciones de aprendizaje
+            const userIntent = detectarIntencionUsuario(norm.escena);
+            if (userIntent === "learning") {
+                norm.sceneAccessory = "headphones";
+                if (norm.dispositivo === "none") {
+                    norm.dispositivo = "tablet"; // El estudio digital requiere pantalla de soporte
+                }
+            }
+
+            // Ajustar complejidad según preferencia
+            let score = calculateComplexityScore(norm);
+            if (norm.complexityPreference === "low" || (score > 12 && norm.complexityPreference === "medium")) {
+                // Simplificar automáticamente para evitar desorden visual
+                norm.allowSecondaryDevice = "disabled";
+                if (norm.textMode === "short_label") {
+                    norm.textMode = "safe"; // Descenso a safe mode para reducir deformación de texto
+                }
+            }
+
+            return norm;
+        }
+
+        // 13. CÁLCULO DE COMPLEJIDAD INTERNA
+        function calculateComplexityScore(config) {
+            let score = 0;
+            if (config.layout === "multiple") {
+                score += parseInt(config.groupPeopleCount || 3) * 3;
+            } else {
+                score += 2; // sujeto base
+            }
+            if (config.dispositivo !== "none") score += 2;
+            if (config.allowSecondaryDevice === "enabled") score += 3;
+            if (config.textMode === "short_label") score += 2;
+            if (config.escena.trim().length > 0) score += 2;
+            return score;
+        }
 
         function detectarIntencionUsuario(textoUsuario) {
             if (!textoUsuario) return "general";
@@ -565,6 +625,7 @@
             }
             return "general";
         }
+
 
         function traducirAccionAlIngles(textoUsuario) {
             if (!textoUsuario) return "";
@@ -745,7 +806,19 @@
             return surfaces.slice(0, 2);
         }
 
+
+        // 7. CONTROL DEL TEXTO VISIBLE Y SUS TRES MODOS
         function buildSpanishTextInstruction(profesion, accion, selectedSurfaces, userIntent, isGroup = false) {
+            const mode = currentConfig.textMode;
+            if (mode === "safe") {
+                return "All screens, documents, reports, whiteboards and binders display simple abstract geometric charts, clean interface blocks and non-readable visual data, with absolutely no readable text, no logos and no brand names.";
+            }
+
+            if (mode === "post_production") {
+                return "All active display screens show a completely clean, solid, reflection-free surface area designed as a clear placeholder for post-production graphic replacement, preserving precise geometric perspective.";
+            }
+
+            // Modo: short_label (Máximo 2 superficies, textos cortos en español de 1-4 palabras)
             let texts = [];
             if (isGroup) {
                 const mapCategory = userIntent === "learning" ? "aprendizaje" : profesion;
@@ -772,23 +845,24 @@
                     instructions.push(`The ${surface} is clearly labeled in Spanish: “${txt}”`);
                 }
             });
-            return instructions.join(". ") + (instructions.length > 0 ? "." : "");
+            return instructions.join(". ") + (instructions.length > 0 ? " All other text elements remain completely abstract and unreadable." : "");
         }
 
 
+        // 4. REGLAS FÍSICAS ESPECÍFICAS PARA CADA DISPOSITIVO Y 14. MONITOR DE ESCRITORIO REALISTA
         function buildErgonomicDeskLayout(config, selectedObjects) {
             let layoutTexts = [];
             const isWriting = (config.accionDispositivo === "escribiendo" || config.escena.toLowerCase().includes("escribiendo") || config.escena.toLowerCase().includes("tomando apuntes"));
             const isReading = (config.accionDispositivo === "leyendo" || config.escena.toLowerCase().includes("leyendo") || config.escena.toLowerCase().includes("estudiando"));
 
             if (config.dispositivo === "laptop") {
-                layoutTexts.push("The laptop is placed directly in front of the professional, aligned with the torso and within natural reach of both hands.");
+                layoutTexts.push("The laptop is placed directly in front of the professional, aligned with the torso and within natural reach of both hands. The screen is tilted naturally and keyboard oriented toward the fingers, angled slightly away from the camera's axis.");
             } else if (config.dispositivo === "desktop") {
-                layoutTexts.push("The desktop monitor is placed slightly to the side but angled toward the professional, with the keyboard and mouse naturally positioned in front of the hands.");
+                layoutTexts.push("The front surface of the desktop monitor faces the professional. The monitor, keyboard and mouse share the same orientation and form one coherent workstation. The camera sees the monitor only from a realistic three-quarter side angle. The screen is partially visible but is not presented frontally to the camera. The back of the monitor never faces the professional.");
             } else if (config.dispositivo === "tablet") {
-                layoutTexts.push("The tablet is placed within comfortable reach, resting angled on the desk surface in front of the professional.");
+                layoutTexts.push("The tablet is placed within comfortable reach, resting angled on a table stand or held naturally at a functional viewing angle facing the professional's eyes, never floating.");
             } else if (config.dispositivo === "smartphone") {
-                layoutTexts.push("The smartphone is placed nearby within comfortable reach on the workspace.");
+                layoutTexts.push("The smartphone is held naturally in one hand or placed nearby on the desktop, with its screen oriented towards the professional's gaze.");
             } else {
                 layoutTexts.push("No digital screens are present, maintaining a clean tactile workstation.");
             }
@@ -801,20 +875,18 @@
                 layoutTexts.push("Work materials are placed within easy and comfortable reach of the professional's hands.");
             }
 
+            // 6. REEMPLAZAR SIMETRÍA DECORATIVA POR ERGONOMÍA REAL Y 15. LAYOUT CENTRADO
             if (config.layout === "right") {
-                layoutTexts.push("The subject is positioned on the right third of the frame in a natural working posture. All tools and devices occupy the center and left portion of the desk within comfortable reach, aligned with the posture.");
+                layoutTexts.push("The subject is positioned on the right third of the frame in a natural working posture. All tools and devices occupy the center and left portion of the desk within comfortable reach, aligned with the posture in an asymmetrical but ergonomically organized layout.");
             } else if (config.layout === "left") {
-                layoutTexts.push("The subject is positioned on the left third of the frame in a natural working posture. All tools and devices occupy the center and right portion of the desk within comfortable reach, aligned with the posture.");
+                layoutTexts.push("The subject is positioned on the left third of the frame in a natural working posture. All tools and devices occupy the center and right portion of the desk within comfortable reach, aligned with the posture in an asymmetrical but ergonomically organized layout.");
             } else if (config.layout === "center") {
-                layoutTexts.push("The subject is centered in the frame, seated at a clean executive desk with work tools symmetrically and beautifully balanced on both sides within easy reach.");
+                layoutTexts.push("The subject is centered in the frame. Work tools are asymmetrically but ergonomically distributed in front of and beside the professional according to the active task. The arrangement follows natural reach and real workplace use rather than visual symmetry, not arranged as a product display.");
             }
-
-            layoutTexts.push("All work tools are naturally positioned for the professional to use, not arranged as a display for the camera.");
 
             return layoutTexts.join(" ");
         }
 
-        // CAMBIO 9: Crear plantillas por número de personas
         function getGroupLayoutTemplate(count) {
             const templates = {
                 3: {
@@ -833,7 +905,6 @@
             return templates[count] || templates[3];
         }
 
-        // CAMBIO 1: Agregar lógica de "group table topology"
         function buildGroupTableTopology(config) {
             const count = parseInt(config.groupPeopleCount || 3);
             const template = getGroupLayoutTemplate(count);
@@ -849,7 +920,6 @@
             return map[n] || "three";
         }
 
-        // CAMBIO 3: Crear un rol de usuario principal del dispositivo compartido
         function buildPrimaryDeviceUserRole(count) {
             if (count === 4) {
                 return "One team member sits closest to the laptop and actively uses it, another points at the screen to highlight key points, a third is reviewing a printed document, and the fourth is taking notes in a notebook.";
@@ -860,7 +930,6 @@
             }
         }
 
-        // CAMBIO 4: Controlar la relación entre laptop, documentos y calculadora
         function getControlledGroupObjects(profesion, count) {
             const objectsMap = {
                 contaduria: [
@@ -915,7 +984,6 @@
             return labels[profesion] || "business folder";
         }
 
-        // CAMBIO 6: Mejorar la relación física entre personas y objetos
         function buildGroupErgonomicPrompt(config, groupPeopleCount, objects) {
             const profesion = config.profesion || "administracion";
             const folderName = getFolderLabelForProfession(profesion);
@@ -928,7 +996,6 @@
             const count = parseInt(config.groupPeopleCount || 3);
             const peopleCountWord = numberToWords(count);
             
-            // CAMBIO 2: Definir orientación exacta de la laptop compartida
             let deviceSharedText = "";
             if (config.dispositivo === "laptop") {
                 deviceSharedText = "The shared laptop is placed slightly off-center on the table, with the keyboard facing the nearest active participant and the screen tilted inward toward the group discussion. The screen faces inward toward the collaborative workspace, not toward the camera. The laptop is used as a shared working tool and is not presented frontally to the camera.";
@@ -953,31 +1020,25 @@
             return compositionChunk;
         }
 
+
+        // 8. NO ELIMINAR RESTRICCIONES IMPORTANTES DURANTE LA SANITIZACIÓN
         function sanitizeVisibleSpanishTextPrompt(prompt) {
             if (!prompt) return "";
             let clean = prompt;
 
-            // Eliminar todas las contradicciones de "sin texto legible"
-            const forbiddenPhrases = [
-                /without readable text/gi,
-                /no readable text/gi,
-                /no text/gi,
-                /abstract visual information only/gi,
-                /no typography/gi,
-                /no letters/gi,
-                /no words/gi,
-                /with absolutely no text/gi,
-                /showing abstract visual information/gi,
-                /with no readable text/gi,
-                /no logos/gi,
-                /no brand names/gi
+            // Eliminar solo si hay contradicciones gramaticales duplicadas de la IA
+            const duplicateWriters = [
+                /wears wearing/gi,
+                /wearing a elegant/gi,
+                /wears without glasses/gi
             ];
+            
+            clean = clean.replace(/wears wearing/gi, "wearing");
+            clean = clean.replace(/wearing a elegant/gi, "wearing an elegant");
+            clean = clean.replace(/wears without glasses/gi, "is not wearing glasses");
+            clean = clean.replace(/is clean-shaven smooth face/gi, "has a clean-shaven face");
 
-            forbiddenPhrases.forEach(regex => {
-                clean = clean.replace(regex, "");
-            });
-
-            // Limpiar acumuladores dobles de la IA
+            // Asegurar gramática limpia de "A Latin American a..."
             clean = clean.replace(/A Latin American a young adult/gi, "A young adult Latin American");
             clean = clean.replace(/A Latin American a mid-career/gi, "A mid-career Latin American");
             clean = clean.replace(/A Latin American an experienced/gi, "An experienced Latin American");
@@ -989,39 +1050,55 @@
 
             clean = clean.replace(/\b(a|an)\s+(a|an)\b/gi, 'a');
             clean = clean.replace(/\b(the)\s+(the)\b/gi, 'the');
-            clean = clean.replace(/\bwears\s+wearing\b/gi, 'wearing');
-            clean = clean.replace(/\ba\s+(experienced|honest|excellent|outstanding|elegant|analytical|organized|independent)\b/gi, 'an $1');
-            clean = clean.replace(/\ban\s+(young|mid-career|senior|latin|modern|clean|laptop|desktop|tablet|printed|closed)\b/gi, 'a $1');
-            
-            clean = clean.replace(/wears without glasses/gi, 'not wearing glasses');
-            clean = clean.replace(/is clean-shaven smooth face/gi, 'has a clean-shaven face');
 
-            // Eliminar espacios múltiples
+            // Limpieza de espacios múltiples
             clean = clean.replace(/\s+/g, ' ');
             clean = clean.replace(/\s*,\s*/g, ', ');
             clean = clean.replace(/\s*\.\s*/g, '. ');
 
-            // Formatear en párrafos limpios antes de mostrar
-            const chunks = clean.split('. ');
-            let finalOutput = "";
-            let currentParagraph = "";
+            return clean.trim();
+        }
 
-            chunks.forEach((chunk, idx) => {
-                let trimmed = chunk.trim();
-                if (!trimmed) return;
-                
-                currentParagraph += trimmed + ". ";
-                if ((idx + 1) % 2 === 0 || trimmed.includes("Avoid") || trimmed.includes("Keep the group")) {
-                    finalOutput += currentParagraph.trim() + "\n\n";
-                    currentParagraph = "";
+        // 12. DETECTOR DE CONTRADICCIONES INTERNO
+        function detectPromptContradictions(prompt, config) {
+            let cleanPrompt = prompt;
+            let fixesApplied = [];
+
+            const checks = [
+                {
+                    pattern: /both hands holding.*writing/gi,
+                    replacement: "She holds the tablet in her left hand while preparing to write with her right hand.",
+                    desc: "Sustituyendo sujeción de tablet con escritura simultánea por postura secuencial realista."
+                },
+                {
+                    pattern: /no readable text.*clearly titled/gi,
+                    replacement: "abstract business metrics are clearly arranged",
+                    desc: "Resolviendo contradicción entre Safe Mode 'sin texto' y títulos legibles."
+                },
+                {
+                    pattern: /symmetrical and beautifully balanced/gi,
+                    replacement: "asymmetrically but ergonomically organized",
+                    desc: "Corrigiendo simetría artificial de escaparate por ergonomía física real."
+                },
+                {
+                    pattern: /screen facing camera.*facing the professional/gi,
+                    replacement: "The screen is tilted inward facing the professional, oriented away from the camera axis.",
+                    desc: "Corrigiendo contradicción de orientación de monitor frontal."
+                }
+            ];
+
+            checks.forEach(check => {
+                if (check.pattern.test(cleanPrompt)) {
+                    cleanPrompt = cleanPrompt.replace(check.pattern, check.replacement);
+                    fixesApplied.push(check.desc);
                 }
             });
 
-            if (currentParagraph) {
-                finalOutput += currentParagraph.trim();
+            if (fixesApplied.length > 0) {
+                console.log("🛠️ Capa de Corrección y Saneamiento Activa:", fixesApplied);
             }
 
-            return finalOutput.trim();
+            return cleanPrompt;
         }
 
 
@@ -1139,7 +1216,7 @@
 
                                             <!-- Opción 4: Reunión -->
                                             <label class="relative flex flex-col items-center p-3 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition" id="label-layout-multiple">
-                                                <input type="radio" name="layout-activo" id="layout-multiple-input" value="multiple" class="sr-only" onchange="seleccionarLayoutActivo('multiple'); ejecutarCambioFormulario();">
+                                                <input type="radio" name="layout-activo" id="layout-multiple-input" value="multiple" class="sr- sr-only" onchange="seleccionarLayoutActivo('multiple'); ejecutarCambioFormulario();">
                                                 <div class="w-full h-14 bg-slate-100 dark:bg-slate-950 rounded-lg flex items-center p-1 mb-2 gap-1 border border-slate-200 dark:border-slate-800 overflow-hidden justify-center">
                                                     <div class="w-5 h-5 bg-indigo-50/20 border border-indigo-500/30 rounded-full flex items-center justify-center text-indigo-500 text-[8px] font-bold">👤</div>
                                                     <div class="w-6 h-6 bg-indigo-500/20 border border-indigo-500/40 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-bold">👤</div>
@@ -1151,8 +1228,8 @@
                                         </div>
                                     </div>
 
-                                    <!-- CAMBIO 7: Selector visible solo en modo grupal (Cantidad de Personas) -->
-                                    <div id="group-people-box" class="hidden col-span-1 md:col-span-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-xl animate-fade-in">
+                                    <!-- Selector visible en modo grupal (Cantidad de Personas) -->
+                                    <div id="group-people-box" class="hidden col-span-1 md:col-span-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/50 p-3 rounded-xl">
                                         <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1">Cantidad de Personas</label>
                                         <select id="group-people-count" onchange="ejecutarCambioFormulario()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200 cursor-pointer">
                                             <option value="3" selected>3 personas</option>
@@ -1162,7 +1239,7 @@
                                         <span class="block text-[10px] text-slate-500 dark:text-slate-400 mt-1">Selecciona entre 3 y 5 personas para escenas colaborativas.</span>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 animate-fade-in" id="filtros-individuales-box">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3" id="filtros-individuales-box">
                                         <div>
                                             <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Identidad de Género</label>
                                             <select id="gender-activo" onchange="toggleGenderTraitsActivo()" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200">
@@ -1215,6 +1292,39 @@
                                             <!-- Se inyectará dinámicamente mediante sincronizarSelectoresGenero() -->
                                         </div>
                                     </div>
+
+                                    <!-- Parámetros Avanzados del Renderizador -->
+                                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-3">
+                                        <span class="block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide flex items-center gap-1.5">
+                                            <i class="fa-solid fa-microchip"></i> Parámetros del Renderizador de Imagen (Lógica de Evitación)
+                                        </span>
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Modo de Texto en Pantalla</label>
+                                                <select id="renderer-text-mode" onchange="ejecutarCambioFormulario()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    <option value="safe" selected>Safe Mode (Sin textos para evitar deformación)</option>
+                                                    <option value="short_label">Short Label Mode (Títulos cortos en español)</option>
+                                                    <option value="post_production">Post-Production Mode (Pantallas verdes listas para editar)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Permitir Dispositivo Secundario</label>
+                                                <select id="renderer-secondary-device" onchange="ejecutarCambioFormulario()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    <option value="disabled" selected>Deshabilitado (Imagen más limpia y enfocada)</option>
+                                                    <option value="enabled">Habilitado (Múltiples pantallas/herramientas secundarias)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Preferencia de Complejidad</label>
+                                                <select id="renderer-complexity" onchange="ejecutarCambioFormulario()" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    <option value="low" selected>Bajo (Simplifica elementos, máxima fidelidad física)</option>
+                                                    <option value="medium">Medio (Escritorio corporativo estándar)</option>
+                                                    <option value="high">Alto (Escena rica en detalles y accesorios de oficina)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
 
@@ -1428,6 +1538,7 @@
             return "fa-user-tie text-indigo-400";
         }
 
+
         function guardarSeccionActual() {
             currentConfig.escena = document.getElementById("context-activo").value;
             currentConfig.genero = document.getElementById("gender-activo").value;
@@ -1438,6 +1549,11 @@
             currentConfig.profesion = document.getElementById("profesion-activa").value;
             currentConfig.nacionalidad = document.getElementById("nacionalidad-activa").value;
             
+            // Renderer parameters
+            currentConfig.textMode = document.getElementById("renderer-text-mode").value;
+            currentConfig.allowSecondaryDevice = document.getElementById("renderer-secondary-device").value;
+            currentConfig.complexityPreference = document.getElementById("renderer-complexity").value;
+
             if (document.getElementById("hair-activo")) currentConfig.hair = document.getElementById("hair-activo").value;
             if (document.getElementById("facial-activo")) currentConfig.facial = document.getElementById("facial-activo").value;
             if (document.getElementById("glasses-activo")) currentConfig.glasses = document.getElementById("glasses-activo").value;
@@ -1473,6 +1589,11 @@
             document.getElementById("nacionalidad-activa").value = currentConfig.nacionalidad || "boliviano";
             document.getElementById("group-people-count").value = currentConfig.groupPeopleCount || 3;
             
+            // Renderer parameters
+            document.getElementById("renderer-text-mode").value = currentConfig.textMode || "safe";
+            document.getElementById("renderer-secondary-device").value = currentConfig.allowSecondaryDevice || "disabled";
+            document.getElementById("renderer-complexity").value = currentConfig.complexityPreference || "low";
+
             seleccionarLayoutActivo(currentConfig.layout);
             sincronizarSelectoresGenero(currentConfig.genero, currentConfig.hair, currentConfig.facial, currentConfig.clothingType, currentConfig.clothingColor);
             
@@ -1637,6 +1758,8 @@
             }
         }
 
+
+        // 9. CREAR PLANTILLAS ESTRUCTURADAS (De la Letra A a la L)
         function generarPromptGoogleFlowCoherente(config) {
             const matrix = compatibilityMatrix[config.profesion] || compatibilityMatrix.administracion;
             const userIntent = detectarIntencionUsuario(config.escena);
@@ -1646,50 +1769,33 @@
                 // MODO COLABORATIVO GRUPAL (Entre 3 y 5 personas) con topología estricta
                 const groupAction = normalizarAccionGrupal(config.profesion, config.escena);
                 const count = parseInt(config.groupPeopleCount || 3);
-                
-                // CAMBIO 4: Controlar la relación entre laptop, documentos y calculadora
                 const objects = getControlledGroupObjects(config.profesion, count);
                 
                 // Superficies con texto (Máximo 2 textos visibles en español)
                 const textSurfaces = ["laptop screen", "report cover"];
                 const spanishTextInstructions = buildSpanishTextInstruction(config.profesion, groupAction, textSurfaces, userIntent, true);
-                
-                // CAMBIO 1: Agregar lógica de "group table topology"
                 const topology = buildGroupTableTopology(config);
-                
-                // CAMBIO 3: Crear un rol de usuario principal del dispositivo compartido
                 const roles = buildPrimaryDeviceUserRole(count);
-                
-                // CAMBIO 6: Relación física ergonómica entre personas y objetos
                 const ergonomics = buildGroupErgonomicPrompt(config, count, objects);
 
                 const nacObj = nacionalidadesReferencia[config.nacionalidad] || { nombre: "Bolivia", context: "based in Bolivia" };
                 const locationContext = nacObj.context;
 
-                const styleBlock = "Photorealistic corporate editorial photograph, 16:9 horizontal format.";
-                
-                // CAMBIO 8: Mejorar la composición de grupo a un formato espacial descriptivo
-                const teamIntro = `A small team of ${numberToWords(count)} Latin American ${config.profesion === "aprendizaje" ? "students" : "professionals"} ${locationContext} is ${topology}.`;
-                
-                // CAMBIO 2: Orientación y uso de laptop exacto (No enfrenta a la cámara)
-                const actionBlock = `They are ${groupAction}. The shared laptop is placed slightly off-center on the table, with the keyboard facing the nearest active participant and the screen tilted inward toward the group discussion. The screen faces inward toward the collaborative workspace, not toward the camera. The laptop is used as a shared working tool and is not presented frontally to the camera.`;
-                
-                const objectsBlock = `The shared workspace contains only the essential tools: ${objects.join(", ")}. ${spanishTextInstructions}`;
-                const interactionBlock = `${roles} ${ergonomics}`;
-                
-                const backgroundBlock = `The background is a softly blurred office environment matching ${matrix.entorno}. The environment feels realistic, professional, calm and collaborative.`;
-                
-                let lightingText = "Bright natural office daylight, realistic corporate meeting atmosphere.";
-                if (config.daytime === "night") {
-                    lightingText = "Warm evening office lighting, soft professional meeting environment with subtle reflections in the background.";
-                }
+                // Bloques Estructurados A-L
+                const blockA = "Photorealistic corporate editorial photograph, 16:9 horizontal format.";
+                const blockB = `A small team of ${numberToWords(count)} Latin American professionals ${locationContext} is ${topology}.`;
+                const blockC = `They are actively engaged in the process of ${groupAction}.`;
+                const blockD = "The main collaborative interface is a shared laptop placed in the workspace center.";
+                const blockE = `${roles}`;
+                const blockF = `${ergonomics} The laptop screen is angled inward facing the team, consistent with a real meeting posture, consistent with natural use rather than visual display.`;
+                const blockG = `The shared workspace is minimal and clean, containing only the required tools: ${objects.join(", ")}.`;
+                const blockH = `The background is a softly blurred office environment matching ${matrix.entorno}, clean, quiet and organized.`;
+                const blockI = "Bright natural office daylight, clean composition, photographed with a high-performance 35mm lens, f/2.8, soft cinematic depth of field, sharp details.";
+                const blockJ = `${spanishTextInstructions}`;
+                const blockK = "Prioritize clear role distribution and shared-task coherence. Each participant must have one understandable role. Shared devices must face the active participants, never the camera. Avoid duplicated gestures, duplicated tools and participants performing the same action mechanically.";
+                const blockL = "Keep the group composition spatially coherent and professionally grounded. The shared laptop must be oriented inward toward the team, not toward the camera. Avoid floating object placement, front-facing display screens, too many scattered papers, duplicate devices, cluttered desks, everyone reaching toward the same object, distorted hands and unrealistic group posture.";
 
-                const technicalBlock = `${lightingText}, clean composition, photographed with a high-performance 35mm lens, f/2.8, soft cinematic depth of field.`;
-                
-                // CAMBIO 10: Actualizar el prompt negativo para escenas grupales más específico
-                const negativeBlock = `Keep the group composition spatially coherent and professionally grounded. The shared laptop must be oriented inward toward the team, not toward the camera. Avoid floating object placement, front-facing display screens, too many scattered papers, duplicate devices, cluttered desks, everyone reaching toward the same object, distorted hands, and unrealistic group posture.`;
-
-                const rawPrompt = `${styleBlock}\n\n${teamIntro}\n\n${actionBlock}\n\n${interactionBlock}\n\n${objectsBlock}\n\n${backgroundBlock}\n\n${technicalBlock}\n\n${negativeBlock}`;
+                const rawPrompt = `${blockA}\n\n${blockB}\n\n${blockC}\n\n${blockD}\n\n${blockE}\n\n${blockF}\n\n${blockG}\n\n${blockH}\n\n${blockI}\n\n${blockJ}\n\n${blockK}\n\n${blockL}`;
                 
                 return sanitizeVisibleSpanishTextPrompt(rawPrompt);
 
@@ -1801,16 +1907,35 @@
                     accessoryDesc = `${pronoun} is wearing subtle wireless over-ear headphones.`;
                 }
 
-                const styleBlock = "Photorealistic corporate editorial photograph, 16:9 horizontal format.";
-                const subjectBlock = `A Latin American ${ageDesc} ${locationContext} is seated in a modern corporate workspace. The professional ${stylingTraits}. ${clothingDesc} ${accessoryDesc}`;
-                const actionBlock = `${pronoun} is ${normalizedAction} using ${primaryDeviceText}.`;
-                const layoutBlock = `${ergonomicDescription}`;
-                const textBlock = `${spanishTextInstructions}`;
-                const environmentBlock = `The background is a softly blurred office environment matching ${entornoProfesional}.`;
-                const technicalBlock = `${lightingText}, professional expression, realistic corporate environment, photographed with a clean 35mm lens, f/2.8, soft cinematic depth of field, sharp focus on the subject.`;
-                const negativeBlock = "Keep the desk layout natural and ergonomic. Avoid objects arranged like a display, tools facing the camera unnaturally, disconnected props, duplicate screens, cluttered desks, distorted hands and unrealistic object placement. Respect the user’s intended action. Avoid replacing the scene with unrelated business reports.";
+                // 11. RESTRICCIONES NEGATIVAS DINÁMICAS SEGÚN EL DISPOSITIVO
+                let customNegatives = "";
+                if (config.dispositivo === "desktop") {
+                    customNegatives = "no reversed monitor, no screen facing away from the user, no disconnected keyboard, no keyboard facing a different direction, no mouse on the opposite workstation, no impossible cable connections, no duplicated monitor.";
+                } else if (config.dispositivo === "tablet") {
+                    customNegatives = "no floating tablet, no reversed tablet, no duplicated tablet, no hands passing through the device, no simultaneous writing while both hands hold the tablet.";
+                } else if (config.accionDispositivo === "escribiendo") {
+                    customNegatives = "no pen outside the hand, no duplicated pen, no writing without contact with the paper, no closed notebook while writing.";
+                } else if (config.accionDispositivo === "leyendo") {
+                    customNegatives = "no upside-down document, no document facing the camera instead of the reader, no gaze directed away from the document.";
+                } else {
+                    customNegatives = "no floating object placement, no unrealistic layouts, no cluttered desks, no duplicate monitors.";
+                }
 
-                const rawPrompt = `${styleBlock} ${subjectBlock} ${actionBlock} ${layoutBlock} ${textBlock} ${environmentBlock} ${technicalBlock} ${negativeBlock}`;
+                // Bloques Estructurados A-L
+                const blockA = "Photorealistic corporate editorial photograph, 16:9 horizontal format.";
+                const blockB = `A Latin American ${ageDesc} ${locationContext} is seated in a modern corporate workspace. The professional ${stylingTraits}. ${clothingDesc} ${accessoryDesc}`;
+                const blockC = `${pronoun} is actively ${normalizedAction}.`;
+                const blockD = `The primary device being operated is ${primaryDeviceText}.`;
+                const blockE = `The subject's eyes, hands, and physical posture naturally align directly with ${primaryDeviceText || 'the workspace documents'}, showing absolute task alignment.`;
+                const blockF = `${ergonomicDescription}`;
+                const blockG = `The clean desk contains only essential tools, including ${secondaryObject1} and ${secondaryObject2} within natural reach.`;
+                const blockH = `The background is a softly blurred modern office matching ${entornoProfesional}.`;
+                const blockI = `${lightingText}, professional serious expression, authentic corporate proportions, shot with a high-performance 35mm lens, f/2.8, soft depth of field, neutral color grading.`;
+                const blockJ = `${spanishTextInstructions}`;
+                const blockK = "Prioritize physical, ergonomic and spatial coherence over making every object visible to the camera. Every device must face its active user. The user’s gaze, hands and posture must correspond to the primary action. All related tools must share a logical orientation and remain within natural reach. Show only objects necessary for the task.";
+                const blockL = `Keep the scene visually coherent and professionally grounded. ${customNegatives} Avoid duplicated screens, extra devices, unrelated props, distorted hands, and artificial-looking faces.`;
+
+                const rawPrompt = `${blockA}\n\n${blockB}\n\n${blockC}\n\n${blockD}\n\n${blockE}\n\n${blockF}\n\n${blockG}\n\n${blockH}\n\n${blockI}\n\n${blockJ}\n\n${blockK}\n\n${blockL}`;
                 
                 return sanitizeVisibleSpanishTextPrompt(rawPrompt);
             }
@@ -1818,9 +1943,18 @@
 
         function construirPromptEspecificoActivo() {
             guardarSeccionActual();
-            const promptFinal = generarPromptGoogleFlowCoherente(currentConfig);
-            currentConfig.promptCalculado = promptFinal;
-            return promptFinal;
+            
+            // Paso 1: Ejecutar la Capa de Validación y Normalización antes de construir
+            const validatedConfig = validateAndNormalizeSceneConfig(currentConfig);
+            
+            // Generar prompt
+            const promptFinal = generarPromptGoogleFlowCoherente(validatedConfig);
+            
+            // Paso 12: Ejecutar el Detector de Contradicciones Interno
+            const correctedPrompt = detectPromptContradictions(promptFinal, validatedConfig);
+            
+            currentConfig.promptCalculado = correctedPrompt;
+            return correctedPrompt;
         }
 
         function generarPromptActivo() {
@@ -1875,6 +2009,7 @@
             }
             document.body.removeChild(textToCopy);
         }
+
 
         async function generarImagenConIAActivo() {
             guardarSeccionActual();
