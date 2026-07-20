@@ -88,7 +88,7 @@
                             <i class="fa-solid fa-shield-halved animate-pulse"></i> Safe & Clean Google Flow Optimization
                         </span>
                         <h1 class="text-3xl md:text-4xl font-extrabold text-slate-950 dark:text-white tracking-tight flex items-center gap-3">
-                            <span>🎯 Hyper-Real Corporate Prompt Engine <span class="text-sm font-mono font-semibold align-middle bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg">v2.0.10</span></span>
+                            <span>🎯 Hyper-Real Corporate Prompt Engine <span class="text-sm font-mono font-semibold align-middle bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-lg">v2.0.11</span></span>
                         </h1>
                         <p class="text-slate-500 dark:text-slate-400 mt-2 max-w-3xl text-sm md:text-base">
                             Generador optimizado para Google Flow con ergonomía física real e interacciones colaborativas grupales realistas basadas en la profesión seleccionada.
@@ -453,6 +453,7 @@
             ]
         };
 
+
         // Estado único de la aplicación
         let currentConfig = {};
         let promptIsGenerated = false;
@@ -571,6 +572,7 @@
                 imagenGeneradaUrl: ""
             };
         }
+
 
         // CAPA DE VALIDACIÓN Y NORMALIZACIÓN ANTES DE CONSTRUIR EL PROMPT
         function validateAndNormalizeSceneConfig(config) {
@@ -814,6 +816,7 @@
             return surfaces.slice(0, 2);
         }
 
+
         // CONTROL DEL TEXTO VISIBLE Y SUS MODOS
         function buildSpanishTextInstruction(profesion, accion, selectedSurfaces, userIntent, isGroup = false) {
             const mode = currentConfig.textMode;
@@ -996,6 +999,7 @@
             return `The shared laptop sits in the collaborative center of the table. The ${folderName} rests near the participant reviewing it, while the secondary tools are placed beside the members assisting with figures or data. Notebooks are positioned near the team members taking notes. All work tools are naturally positioned for the team to use, not arranged as a display for the camera.`;
         }
 
+
         function buildGroupCompositionPrompt(config, groupAction, selectedObjects) {
             const nacObj = nacionalidadesReferencia[config.nacionalidad] || { nombre: "Bolivia", context: "based in Bolivia" };
             const locationContext = nacObj.context;
@@ -1100,11 +1104,12 @@
             });
 
             if (fixesApplied.length > 0) {
-                console.log("🛠️ Capa de Corrección y Saneamiento Activa:", fixesApplied);
+                console.log("🛠&nbsp;Capa de Corrección y Saneamiento Activa:", fixesApplied);
             }
 
             return cleanPrompt;
         }
+
 
         function renderizarAplicacion() {
             const container = document.getElementById("main-container");
@@ -1548,6 +1553,39 @@
             }
         }
 
+        // CONTROLADOR DE CAMBIO DE GÉNERO Y RESETEO DE SELECTORES DE FACCIONES
+        function toggleGenderTraitsActivo() {
+            const selectElement = document.getElementById("gender-activo");
+            if (!selectElement) return;
+
+            const newGender = selectElement.value;
+            currentConfig.genero = newGender;
+
+            // Restablecer valores coherentes predeterminados según el género
+            if (newGender === 'woman') {
+                currentConfig.hair = rasgosLatinosMujer.cabello[0].val;
+                currentConfig.facial = rasgosLatinosMujer.accesorios[0].val;
+                currentConfig.clothingType = rasgosLatinosMujer.vestimentaTipos[0].val;
+                currentConfig.clothingColor = "white";
+            } else if (newGender === 'man') {
+                currentConfig.hair = rasgosLatinosHombre.cabello[0].val;
+                currentConfig.facial = rasgosLatinosHombre.facial[0].val;
+                currentConfig.glasses = rasgosLatinosHombre.accesorios[0].val;
+                currentConfig.clothingType = rasgosLatinosHombre.vestimentaTipos[0].val;
+                currentConfig.clothingColor = "navy blue";
+            } else {
+                currentConfig.hair = "neat short professional hair";
+                currentConfig.facial = "no accessories";
+                currentConfig.clothingType = "professional business outfit";
+                currentConfig.clothingColor = "navy blue";
+            }
+
+            sincronizarSelectoresGenero(newGender, currentConfig.hair, currentConfig.facial, currentConfig.clothingType, currentConfig.clothingColor);
+            ejecutarCambioFormulario();
+
+            showToast(`Estilo de negocios adaptado a: ${newGender === 'woman' ? 'Mujer' : newGender === 'man' ? 'Hombre' : 'Neutro'}`, 'info');
+        }
+
         function getIconoDeSeccion() {
             const layout = currentConfig.layout;
             if (layout === "multiple") return "fa-users text-indigo-400";
@@ -1774,6 +1812,7 @@
                 downloadBtn.href = "#";
             }
         }
+
 
         // CREAR PLANTILLAS ESTRUCTURADAS (De la Letra A a la L)
         function generarPromptGoogleFlowCoherente(config) {
@@ -2228,6 +2267,7 @@
             }
         }
 
+
         function inicializarTema() {
             const savedTheme = localStorage.getItem("theme");
             const doc = document.documentElement;
@@ -2248,7 +2288,7 @@
             inicializarEstado();
             renderizarAplicacion();
             cargarSeccionActual();
-            showToast("Plataforma Google Flow Edition v2.0.10 lista.", "info");
+            showToast("Plataforma Google Flow Edition v2.0.11 lista.", "info");
         };
     </script>
 </body>
